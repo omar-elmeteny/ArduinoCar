@@ -53,7 +53,7 @@ byte Chars[6][9]{
 
 #define POTENTIOMETER_X A1
 #define POTENTIOMETER_Y A0
-#define JOYSTICK_BUTTON 10
+#define JOYSTICK_BUTTON 12
 
 // Set last values for each potentiometer
 int lastValueX = 0;
