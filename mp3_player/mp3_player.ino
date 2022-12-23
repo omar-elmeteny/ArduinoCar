@@ -23,7 +23,7 @@ DFPlayer - A Mini MP3 Player For Arduino
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
 
-SoftwareSerial mySoftwareSerial(11, 12); // RX, TX
+SoftwareSerial mySoftwareSerial(10, 11); // RX, TX
 DFRobotDFPlayerMini myDFPlayer;
 void printDetail(uint8_t type, int value);
 
@@ -46,7 +46,7 @@ void setup()
   }
   Serial.println("DFPlayer Mini online.");
   
-  myDFPlayer.volume(10);  //Set volume value. From 0 to 30
+  myDFPlayer.volume(30);  //Set volume value. From 0 to 30
   myDFPlayer.play(1);  //Play the first mp3
 }
 
