@@ -61,7 +61,7 @@ int lastValueY = 0;
 char gearStatus = ' ';
 int buttonStatus = LOW;
 
-#define POTENTIOMETER_MAX 680.0
+double POTENTIOMETER_MAX;
 #define POTENTIOMETER_MIN 0.0
 
 void setup() {
@@ -81,6 +81,7 @@ void setup() {
 
   // Setup joystick button
   pinMode(JOYSTICK_BUTTON, INPUT_PULLUP);
+  POTENTIOMETER_MAX = analogRead(POTENTIOMETER_Y) * 2;
 }
 
 void setState(bool mode)  //sets the hole segment state to "mode"
