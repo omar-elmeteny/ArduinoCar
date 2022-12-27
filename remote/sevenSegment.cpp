@@ -1,5 +1,7 @@
+#include "projdefs.h"
 #include <stdint.h>
 #include <Arduino.h>
+#include <Arduino_FreeRTOS.h>
 
 #include "sevenSegment.h"
 
@@ -19,7 +21,7 @@ bool segMode = common_anode;  // set this to your segment type, my segment is co
 
 
 int seg[]{ A, B, C, D, E, F, G, DP };  // segment pins
-uint8_t chars = 6;                        // max value in the array "Chars"
+uint8_t chars = 6;                     // max value in the array "Chars"
 
 uint8_t Chars[6][9]{
   { '1', 0, 1, 1, 0, 0, 0, 0, 0 },  //1
@@ -40,7 +42,7 @@ void setupSevenSegment() {
   pinMode(seg[4], OUTPUT);
   pinMode(seg[5], OUTPUT);
   pinMode(seg[6], OUTPUT);
-  pinMode(seg[7], OUTPUT);  
+  pinMode(seg[7], OUTPUT);
 }
 
 void setState(bool mode)  //sets the hole segment state to "mode"
@@ -61,21 +63,21 @@ void sevenSegPrint(char Char)  // print any character on the segment ( Note : yo
     }
   }
 
-  if (charNum == -1)  // if the character not found
-  {
+  if (charNum == -1) {  // if the character not found
+
     for (int i = 0; i <= 6; i++) {
       digitalWrite(seg[i], HIGH);
-      delay(100);
+      vTaskDelay(pdMS_TO_TICKS(100));
       digitalWrite(seg[i], LOW);
     }
     for (int i = 0; i <= 2; i++) {
-      delay(100);
+      vTaskDelay(pdMS_TO_TICKS(100));
       setState(HIGH);
-      delay(100);
+      vTaskDelay(pdMS_TO_TICKS(100));
       setState(LOW);
     }
-  } else  // else if the character found print it
-  {
+  } else {  // else if the character found print it
+
     if (segMode == 0) {  //for segment mode
       for (int i = 0; i < 8; i++) {
         digitalWrite(seg[i], Chars[charNum][i + 1]);
