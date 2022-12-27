@@ -11,14 +11,18 @@ E (seg[4] in this project) |   |
                              D (seg[3] in this project)
 
  */
-#define A 8
-#define B 9
-#define C 6
-#define D 5
-#define E 4
-#define F 3
-#define G 2
-#define DP 7  // decimal
+
+#include <SoftwareSerial.h>
+SoftwareSerial BTSerial (50,51);
+
+#define A 28
+#define B 29
+#define C 30
+#define D 33
+#define E 32
+#define F 27
+#define G 26
+#define DP 31  // decimal
 #define common_cathode 0
 #define common_anode 1
 bool segMode = common_anode;  // set this to your segment type, my segment is common_cathode
@@ -51,9 +55,9 @@ byte Chars[6][9]{
 
 // Store each pin in a variable
 
-#define POTENTIOMETER_X A1
-#define POTENTIOMETER_Y A0
-#define JOYSTICK_BUTTON 12
+#define POTENTIOMETER_X A15
+#define POTENTIOMETER_Y A14
+#define JOYSTICK_BUTTON 41
 
 // Set last values for each potentiometer
 int lastValueX = 0;
