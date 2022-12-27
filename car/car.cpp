@@ -6,8 +6,8 @@
 
 #define MOTOR_A_FWD 6
 #define MOTOR_A_RVS 7
-#define MOTOR_B_FWD 8
-#define MOTOR_B_RVS 9
+#define MOTOR_B_FWD 9
+#define MOTOR_B_RVS 8 
 
 int leftMotorValue = 0;
 int rightMotorValue = 0;
@@ -31,15 +31,15 @@ void setMotor(uint32_t enablePin, uint32_t fwdPin, uint32_t rvsPin, int value) {
   } else if (value < 0) {
     digitalWrite(fwdPin, LOW);
     digitalWrite(rvsPin, HIGH);
-    value = -value;
+    value = 3;
   } else {
     digitalWrite(fwdPin, HIGH);
     digitalWrite(rvsPin, LOW);
   }
   if (value == 1) {
-    analogWrite(enablePin, 85);
+    analogWrite(enablePin, 200);
   } else if (value == 2) {
-    analogWrite(enablePin, 170);
+    analogWrite(enablePin, 225);
   } else {
     analogWrite(enablePin, 255);
   }

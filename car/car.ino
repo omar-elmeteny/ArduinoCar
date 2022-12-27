@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h>
 #include <Arduino_FreeRTOS.h>
+#include "limits.h"
 
 #include "car.h"
 
@@ -9,18 +10,19 @@ void bluetoothReceiveTask(void *pvParameters);
 void carControlTask(void *pvParameters);
 
 char gearStatus = ' ';
-char oldMo
 
 TaskHandle_t carControlTaskHandle;
 void setup() {
+  Serial.begin(38400);
 
   setupCar();
   BTSerial.begin(38400);
   xTaskCreate(carControlTask, "CAR_CONTROL_TASK", 128, NULL, 1, &carControlTaskHandle);
-  xTaskCreate(bluetoothReceiveTask, "BLUETOOTH_RECEIVE_TASK", 128, NULL, 2, NULL);
+  xTaskCreate(bluetoothReceiveTask, "BLUETOOTH_RECEIVE_TASK", 128, NULL, 1, NULL);
 }
 
 void bluetoothReceiveTask(void *pvParamters) {
+  Serial.println("Starting bluetooth receive.");
   while (true) {
     if (BTSerial.available()) {
       char c = BTSerial.read();
@@ -40,6 +42,7 @@ void bluetoothReceiveTask(void *pvParamters) {
 }
 
 void carControlTask(void *pvParameters) {
+  Serial.println("Starting car control task.");
   uint32_t carCommand;
   while (true) {
     if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &carCommand, portMAX_DELAY) && carCommand) {
