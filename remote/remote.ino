@@ -4,6 +4,7 @@
 
 #include "sevenSegment.h"
 #include "joystick.h"
+#include "mp3Player.h"
 
 SoftwareSerial BTSerial(50, 51);
 
@@ -22,6 +23,8 @@ void setup() {
 
   setupSevenSegment();
   setupJoystick();
+  setupScreen();
+  // setupMp3Player();
   BTSerial.begin(38400);
 
   xTaskCreate(joystickTask, "JOYSTICK_TASK", 128, NULL, 1, NULL);
