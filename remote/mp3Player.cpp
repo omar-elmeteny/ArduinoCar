@@ -4,7 +4,7 @@
 #include <DFRobotDFPlayerMini.h>
 
 #include <MCUFRIEND_kbv.h>
-//#include <Adafruit_GFX.h>
+#include <Adafruit_GFX.h>
 #include <TouchScreen.h>
 
 #include "mp3Player.h"
@@ -16,12 +16,19 @@ SoftwareSerial mp3Serial(52, 53);
 DFRobotDFPlayerMini mp3Player;
 
 #define NUMBER_OF_SONGS 3
-#define SONG_NAME_MAX_LENGTH 25
+#define SONG_NAME_MAX_LENGTH 18
+#define ARTIST_MAX_LENGTH 9
 
 char songNames[NUMBER_OF_SONGS][SONG_NAME_MAX_LENGTH] = {
-  "Amr Diab - El leila",
-  "Amr Diab - Amaken el sahar",
-  "Amr Diab - Wayah",
+  "El leila",
+  "Amaken el sahar",
+  "Wayah",
+};
+
+char artistNames[NUMBER_OF_SONGS][ARTIST_MAX_LENGTH] = {
+  "Amr Diab",
+  "Amr Diab",
+  "Amr Diab",
 };
 volatile int currentSongNumber = 0;
 volatile bool isPlaying = false;
@@ -60,6 +67,8 @@ const int32_t TOUCH_LEFT_X = 150;
 const int32_t TOUCH_RIGHT_X = 900;
 const int32_t TOUCH_TOP_Y = 960;
 const int32_t TOUCH_BOTTOM_Y = 140;
+const int32_t BUTTON_PADDING = 10;
+
 
 void setupScreen() {
   uint16_t ID = tft.readID();
@@ -101,32 +110,37 @@ void setupMp3Player() {
 void drawPlayButton(int x, int y, int width, int height, uint16_t color) {
   tft.fillRect(x, y, width, height, BLACK);
   tft.drawRect(x, y, width, height, color);
-  tft.fillTriangle(x + width * 19 / 100, y + 2, x + width * 19 / 100, y + height - 2, x + width * 81 / 100, y + height / 2, color);
+  tft.fillTriangle(x + width * 19 / 100, y + BUTTON_PADDING, x + width * 19 / 100, y + height - BUTTON_PADDING, x + width * 81 / 100, y + height / 2, color);
 }
 
 void drawPauseButton(int x, int y, int width, int height, uint16_t color) {
   tft.fillRect(x, y, width, height, BLACK);
   tft.drawRect(x, y, width, height, color);
-  tft.fillRect(x + width * 12 / 100, y + 2, width * 28 / 100, height - 2, color);
-  tft.fillRect(x + width * 60 / 100, y + 2, width * 28 / 100, height - 2, color);
+  tft.fillRect(x + width * 12 / 100, y + BUTTON_PADDING, width * 28 / 100, height - BUTTON_PADDING * 2, color);
+  tft.fillRect(x + width * 60 / 100, y + BUTTON_PADDING, width * 28 / 100, height - BUTTON_PADDING * 2, color);
 }
 
 void drawPreviousButton(int x, int y, int width, int height, uint16_t color) {
   tft.drawRect(x, y, width, height, color);
 
-  tft.fillRect(x + width * 12 / 100, y + 2, width * 28 / 100, height - 2, color);
-  tft.fillTriangle(x + width * 88 / 100, y + 2, x + width * 88 / 100, y + height - 2, x + width * 26 / 100, y + height / 2, color);
+  tft.fillRect(x + width * 12 / 100, y + BUTTON_PADDING, width * 28 / 100, height - BUTTON_PADDING * 2, color);
+  tft.fillTriangle(x + width * 88 / 100, y + BUTTON_PADDING, x + width * 88 / 100, y + height - BUTTON_PADDING, x + width * 26 / 100, y + height / 2, color);
 }
 
 void drawNextButton(int x, int y, int width, int height, uint16_t color) {
   tft.drawRect(x, y, width, height, color);
 
-  tft.fillRect(x + width * 60 / 100, y + 2, width * 28 / 100, height - 2, color);
-  tft.fillTriangle(x + width * 12 / 100, y + 2, x + width * 12 / 100, y + height - 2, x + width * 74 / 100, y + height / 2, color);
+  tft.fillRect(x + width * 60 / 100, y + BUTTON_PADDING, width * 28 / 100, height - BUTTON_PADDING * 2, color);
+  tft.fillTriangle(x + width * 12 / 100, y + BUTTON_PADDING, x + width * 12 / 100, y + height - BUTTON_PADDING, x + width * 74 / 100, y + height / 2, color);
 }
 
 uint8_t getTappedButton() {
   TSPoint p = ts.getPoint();
+  // p.x = ts.readTouchX();
+  // p.y = ts.readTouchY();
+  // p.z = ts.pressure();
+  // pinMode(XM, OUTPUT);
+  // pinMode(YP, OUTPUT);
 
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
@@ -164,11 +178,14 @@ uint8_t getTappedButton() {
 }
 
 void updateScreen() {
-  
-  Serial.print("isPlaying=");
-  Serial.print(isPlaying);
-  Serial.print(", pauseDisplayed=");
-  Serial.println(pauseDisplayed);
+  pinMode(XM, OUTPUT);
+  pinMode(YP, OUTPUT);
+
+  // Serial.print("isPlaying=");
+  // Serial.print(isPlaying);
+  // Serial.print(", pauseDisplayed=");
+  // Serial.println(pauseDisplayed);
+
   if (isPlaying != pauseDisplayed) {
     if (isPlaying) {
       drawPauseButton(BUTTON_WIDTH + 2 * BUTTON_GAP, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, WHITE);
@@ -177,17 +194,22 @@ void updateScreen() {
     }
     pauseDisplayed = isPlaying;
   }
-  Serial.print("currentSongNumber=");
-  Serial.print(currentSongNumber);
-  Serial.print(", displayedSong=");
-  Serial.println(displayedSong);
+  // Serial.print("currentSongNumber=");
+  // Serial.print(currentSongNumber);
+  // Serial.print(", displayedSong=");
+  // Serial.println(displayedSong);
 
   if (currentSongNumber != displayedSong) {
-    tft.fillRect(0, BUTTON_Y + 2, SCREEN_WIDTH, 100, BLACK);
-    // tft.setCursor(20, BUTTON_Y + BUTTON_HEIGHT + 20);
-    // tft.setTextSize(3);
-    // tft.setTextColor(WHITE);
-    // tft.print(songNames[currentSongNumber]);
+    tft.fillRect(0, BUTTON_Y + BUTTON_HEIGHT + 2, SCREEN_WIDTH, 100, BLACK);
+    tft.setCursor(20, BUTTON_Y + BUTTON_HEIGHT + 20);
+    tft.setTextSize(3);
+    tft.setTextColor(WHITE);
+    tft.print(artistNames[currentSongNumber]);
+
+    tft.setCursor(20, BUTTON_Y + BUTTON_HEIGHT + 20 + 40);
+    tft.print(songNames[currentSongNumber]);
+
+
     displayedSong = currentSongNumber;
   }
 }

@@ -1,7 +1,8 @@
 #include <Arduino_FreeRTOS.h>
+#include <semphr.h>
+
 #include <SoftwareSerial.h>
 #include <limits.h>
-#include <semphr.h>
 
 #include "sevenSegment.h"
 #include "joystick.h"
@@ -23,38 +24,44 @@ TaskHandle_t bluetoothSendTaskHandle;
 TaskHandle_t mp3PlayerTaskHandle;
 TaskHandle_t screenUpdateTaskHandle;
 
+SemaphoreHandle_t screenPinsMutex;
+
 void setup() {
   // uncomment to enable Serial.print
-
   Serial.begin(9600);
 
   setupSevenSegment();
   setupJoystick();
-  //setupScreen();
+  setupScreen();
   setupMp3Player();
   BTSerial.begin(38400);
 
-  xTaskCreate(inputTask, "INPUT", 128, NULL, 1, NULL);
+  xTaskCreate(inputTask, "INPUT", 512, NULL, 1, NULL);
   //xTaskCreate(joystickTask, "JOYSTICK_TASK", 128, NULL, 2, NULL);
-  xTaskCreate(mp3PlayerStatusUpdatesTask, "MP3_STATUS_TASK", 128, NULL, 1, NULL);
+  xTaskCreate(mp3PlayerStatusUpdatesTask, "MP3_STATUS_TASK", 512, NULL, 1, NULL);
 
 
-  xTaskCreate(gearSevenSegmentTask, "GEAR_7SEGMENT_TASK", 128, NULL, 3, &gearSevenSegmentTaskHandle);
-  xTaskCreate(bluetoothSendTask, "BLUETOOTH_SEND", 128, NULL, 3, &bluetoothSendTaskHandle);
-  xTaskCreate(mp3PlayerTask, "MP3_TASK", 128, NULL, 3, &mp3PlayerTaskHandle);
+  xTaskCreate(gearSevenSegmentTask, "GEAR_7SEGMENT_TASK", 512, NULL, 3, &gearSevenSegmentTaskHandle);
+  xTaskCreate(bluetoothSendTask, "BLUETOOTH_SEND", 512, NULL, 3, &bluetoothSendTaskHandle);
+  xTaskCreate(mp3PlayerTask, "MP3_TASK", 512, NULL, 3, &mp3PlayerTaskHandle);
 
   xTaskCreate(screenUpdateTask, "SCREEN_UPDATE_TASK", 512, NULL, 2, &screenUpdateTaskHandle);
+
+  screenPinsMutex = xSemaphoreCreateMutex();
 }
 
 void loop() {
 }
 
 void screenUpdateTask(void *pvParameters) {
-  setupScreen();
   while (true) {
     uint32_t update;
+
     if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &update, portMAX_DELAY) == pdTRUE && update) {
-      updateScreen();
+      if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) == pdTRUE) {
+        updateScreen();
+        xSemaphoreGive(screenPinsMutex);
+      }
     }
   }
 }
@@ -113,7 +120,12 @@ void inputTask(void *pvParameters) {
       xTaskNotify(bluetoothSendTaskHandle, (uint32_t)gearStatus, eSetValueWithOverwrite);
     }
 
-    uint8_t button = getTappedButton();
+    uint8_t button;
+    if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) != pdTRUE) {
+      continue;
+    }
+    button = getTappedButton();
+    xSemaphoreGive(screenPinsMutex);
 
     if (button) {
       xTaskNotify(mp3PlayerTaskHandle, (uint32_t)button, eSetValueWithOverwrite);
