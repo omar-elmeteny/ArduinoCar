@@ -120,11 +120,10 @@ void inputTask(void *pvParameters) {
       xTaskNotify(bluetoothSendTaskHandle, (uint32_t)gearStatus, eSetValueWithOverwrite);
     }
 
-    uint8_t button;
     if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) != pdTRUE) {
       continue;
     }
-    button = getTappedButton();
+    uint8_t button = getTappedButton();
     xSemaphoreGive(screenPinsMutex);
 
     if (button) {
