@@ -12,6 +12,7 @@
 SoftwareSerial BTSerial(50, 51);
 
 char gearStatus = ' ';
+char direction = ' ';
 
 void inputTask(void *pvParameters);
 void gearSevenSegmentTask(void *pvParameters);
@@ -129,13 +130,19 @@ void handleJoyStickInput()
     xTaskNotify(gearSevenSegmentTaskHandle, (uint32_t)gearStatus, eSetValueWithOverwrite);
     BTSerial.write(gearStatus);
   }
+
+  char newDirection = getDirection();
+  if (newDirection != direction) {
+    direction = newDirection;
+    BTSerial.write(gearStatus);
+  }
 }
 
 void handleTouchScreenInput()
 {
   if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) != pdTRUE)
   {
-    continue;
+    return;
   }
   uint8_t button = getTappedButton();
   xSemaphoreGive(screenPinsMutex);

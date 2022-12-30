@@ -26,19 +26,31 @@
 
 int buttonStatus = LOW;
 
-double POTENTIOMETER_MAX;
+double POTENTIOMETER_Y_MAX;
+double POTENTIOMETER_X_MAX;
 #define POTENTIOMETER_MIN 0.0
 
 void setupJoystick() {
   // Setup joystick button
   pinMode(JOYSTICK_BUTTON, INPUT_PULLUP);
-  POTENTIOMETER_MAX = analogRead(POTENTIOMETER_Y) * 2;
+  POTENTIOMETER_Y_MAX = analogRead(POTENTIOMETER_Y) * 2;
+  POTENTIOMETER_X_MAX = analogRead(POTENTIOMETER_X) * 2;
+}
+
+char getDirection() {
+  double sensorValueX = (double)analogRead(POTENTIOMETER_X) / (POTENTIOMETER_X_MAX - POTENTIOMETER_MIN);
+  if (sensorValueX < 0.47) {
+    return 'a';
+  } else if (sensorValueX <= 0.53) {
+    return 's';
+  } else {
+    return 'd';
+  }
 }
 
 char getCurrentGearStatus(char oldGearStatus) {
   // Read each Potentiometer's value and store in a variable
-  double sensorValueX = analogRead(POTENTIOMETER_X);
-  double sensorValueY = (double)analogRead(POTENTIOMETER_Y) / (POTENTIOMETER_MAX - POTENTIOMETER_MIN);
+  double sensorValueY = (double)analogRead(POTENTIOMETER_Y) / (POTENTIOMETER_Y_MAX - POTENTIOMETER_MIN);
 
   int currentButtonStatus = digitalRead(JOYSTICK_BUTTON);
   char newGearStatus = oldGearStatus;

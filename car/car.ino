@@ -16,12 +16,11 @@ void bluetoothReceiveTask(void *pvParameters);
 void carControlTask(void *pvParameters);
 void sensorTask(void *pvParameters);
 void buzzerTask(void *pvParameters);
-
-char gearStatus = ' ';
+void parkingTask(void *pvParameters);
 
 TaskHandle_t carControlTaskHandle;
 TaskHandle_t buzzerTaskHandle;
-
+TaskHandle_t parkingTaskHandle;
 void setup() {
   #ifdef DEBUG
   Serial.begin(38400);
@@ -34,6 +33,7 @@ void setup() {
 
   xTaskCreate(sensorTask, "US", 128, NULL, 2, NULL);
   xTaskCreate(buzzerTask, "BUZ", 128, NULL, 3, &buzzerTaskHandle);
+  xTaskCreate(parkingTask, "PARK", 128, NULL, 3, &parkingTaskHandle);
 
   xTaskCreate(carControlTask, "CAR", 128, NULL, 1, &carControlTaskHandle);
   xTaskCreate(bluetoothReceiveTask, "BT_RCV", 128, NULL, 1, NULL);
@@ -133,28 +133,42 @@ void carControlTask(void *pvParameters) {
   Serial.println("Starting car control task.");
   #endif
   uint32_t carCommand;
+  int8_t motorValue = 0;
+  int8_t direction = 0;
+
   while (true) {
     if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &carCommand, portMAX_DELAY) && carCommand) {
       char cmd = (char)carCommand;
-      int motorValue = 0;
       switch (cmd) {
         case 'r':
-          gearStatus = cmd;
           motorValue = -1;
           break;
         case 'n':
         case 'p':
-          gearStatus = cmd;
           motorValue = 0;
           break;
         case '1':
         case '2':
         case '3':
-          gearStatus = cmd;
           motorValue = cmd - '0';
           break;
+        case 's':
+          direction = 0;
+          break;
+        case 'a':
+          direction = -1;
+          break;
+        case 'd':
+          direction = 1;
+          break;
       }
-      setCarMovement(motorValue, motorValue);
+      if (direction == 0) {
+        setCarMovement(motorValue, motorValue);
+      } else if (direction == -1) {
+        setCarMovement(0, motorValue);
+      } else if (direction == 1) {
+        setCarMovement(motorValue, 0);
+      }
     }
   }
 }

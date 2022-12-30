@@ -3,5 +3,6 @@
 
 void setupJoystick();
 char getCurrentGearStatus(char oldGearStatus);
+char getDirection();
 
 #endif

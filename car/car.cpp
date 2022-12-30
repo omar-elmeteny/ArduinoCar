@@ -9,8 +9,8 @@
 #define MOTOR_B_FWD 9
 #define MOTOR_B_RVS 8 
 
-int leftMotorValue = 0;
-int rightMotorValue = 0;
+int8_t leftMotorValue = 0;
+int8_t rightMotorValue = 0;
 
 void setupCar() {
   pinMode(MOTOR_A_ENABLE, OUTPUT);
@@ -22,7 +22,7 @@ void setupCar() {
   pinMode(MOTOR_B_RVS, OUTPUT);
 }
 
-void setMotor(uint32_t enablePin, uint32_t fwdPin, uint32_t rvsPin, int value) {
+void setMotor(uint8_t enablePin, uint8_t fwdPin, uint8_t rvsPin, int8_t value) {
   if (value == 0) {
     analogWrite(enablePin, 0);
     digitalWrite(fwdPin, LOW);
@@ -45,7 +45,7 @@ void setMotor(uint32_t enablePin, uint32_t fwdPin, uint32_t rvsPin, int value) {
   }
 }
 
-void setCarMovement(int32_t leftWheels, int32_t rightWheels) {
+void setCarMovement(int8_t leftWheels, int8_t rightWheels) {
   if (leftWheels != leftMotorValue) {
     setMotor(MOTOR_A_ENABLE, MOTOR_A_FWD, MOTOR_A_RVS, leftWheels);
     leftMotorValue = leftWheels;
