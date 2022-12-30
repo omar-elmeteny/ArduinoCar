@@ -14,13 +14,13 @@ char gearStatus = ' ';
 
 void inputTask(void *pvParameters);
 void gearSevenSegmentTask(void *pvParameters);
-void bluetoothSendTask(void *pvParameters);
+//void bluetoothSendTask(void *pvParameters);
 void mp3PlayerTask(void *pvParameters);
 void mp3PlayerStatusUpdatesTask(void *pvParameters);
 void screenUpdateTask(void *pvParameters);
 
 TaskHandle_t gearSevenSegmentTaskHandle;
-TaskHandle_t bluetoothSendTaskHandle;
+//TaskHandle_t bluetoothSendTaskHandle;
 TaskHandle_t mp3PlayerTaskHandle;
 TaskHandle_t screenUpdateTaskHandle;
 
@@ -28,7 +28,7 @@ SemaphoreHandle_t screenPinsMutex;
 
 void setup() {
   // uncomment to enable Serial.print
-  Serial.begin(9600);
+  Serial.begin(38400);
 
   setupSevenSegment();
   setupJoystick();
@@ -42,7 +42,7 @@ void setup() {
 
 
   xTaskCreate(gearSevenSegmentTask, "GEAR_7SEGMENT_TASK", 512, NULL, 3, &gearSevenSegmentTaskHandle);
-  xTaskCreate(bluetoothSendTask, "BLUETOOTH_SEND", 512, NULL, 3, &bluetoothSendTaskHandle);
+  //xTaskCreate(bluetoothSendTask, "BLUETOOTH_SEND", 512, NULL, 3, &bluetoothSendTaskHandle);
   xTaskCreate(mp3PlayerTask, "MP3_TASK", 512, NULL, 3, &mp3PlayerTaskHandle);
 
   xTaskCreate(screenUpdateTask, "SCREEN_UPDATE_TASK", 512, NULL, 2, &screenUpdateTaskHandle);
@@ -93,14 +93,14 @@ void mp3PlayerTask(void *pvParameters) {
   }
 }
 
-void bluetoothSendTask(void *pvParameters) {
-  uint32_t command;
-  while (true) {
-    if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &command, portMAX_DELAY) && command) {
-      BTSerial.write((char)command);
-    }
-  }
-}
+// void bluetoothSendTask(void *pvParameters) {
+//   uint32_t command;
+//   while (true) {
+//     if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &command, portMAX_DELAY) && command) {
+//       BTSerial.write((char)command);
+//     }
+//   }
+// }
 
 void gearSevenSegmentTask(void *pvParameters) {
   uint32_t gearValue;
@@ -117,7 +117,8 @@ void inputTask(void *pvParameters) {
     if (newGearStatus != gearStatus) {
       gearStatus = newGearStatus;
       xTaskNotify(gearSevenSegmentTaskHandle, (uint32_t)gearStatus, eSetValueWithOverwrite);
-      xTaskNotify(bluetoothSendTaskHandle, (uint32_t)gearStatus, eSetValueWithOverwrite);
+      //xTaskNotify(bluetoothSendTaskHandle, (uint32_t)gearStatus, eSetValueWithOverwrite);
+      BTSerial.write(gearStatus);
     }
 
     if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) != pdTRUE) {
