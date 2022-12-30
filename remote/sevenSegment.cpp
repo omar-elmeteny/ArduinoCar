@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <Arduino_FreeRTOS.h>
 
+#include "common.h"
 #include "sevenSegment.h"
 
 // SEVEN SEGMENT PINS

@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include <Arduino_FreeRTOS.h>
 
+#include "common.h"
 #include "distanceSensor.h"
-#include "projdefs.h"
 
 #define FRONT_LEFT_TRIG 4
 #define FRONT_RIGHT_TRIG 12

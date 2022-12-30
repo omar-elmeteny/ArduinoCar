@@ -4,6 +4,8 @@
 #include <float.h>
 #include <limits.h>
 
+#include "common.h"
+
 #include "car.h"
 #include "distanceSensor.h"
 #include "buzzer.h"
@@ -21,7 +23,9 @@ TaskHandle_t carControlTaskHandle;
 TaskHandle_t buzzerTaskHandle;
 
 void setup() {
+  #ifdef DEBUG
   Serial.begin(38400);
+  #endif
 
   setupCar();
   setupBuzzer();
@@ -72,14 +76,16 @@ void sensorTask(void *pvParameters) {
     for (uint8_t i = 0; i < SENSOR_COUNT; i++) {
       float oldDistanceCentimeters = distancesCentimeters[i];
       double newDistanceCentimeters = readDistanceCentimeters(i);
-      // if (abs(newDistanceCentimeters - oldDistanceCentimeters) > DISTANCE_EPSILON_CM) {
-      //   Serial.print("distance change sensor");
-      //   Serial.print(i == 0 ? " FL " : i == 1 ? " FR "
-      //                                : i == 2 ? " BL "
-      //                                         : " BR ");
-      //   Serial.println(newDistanceCentimeters);
-      //   distancesCentimeters[i] = newDistanceCentimeters;
-      // }
+      #if DEBUG
+      if (abs(newDistanceCentimeters - oldDistanceCentimeters) > DISTANCE_EPSILON_CM) {
+        Serial.print("distance change sensor");
+        Serial.print(i == 0 ? " FL " : i == 1 ? " FR "
+                                     : i == 2 ? " BL "
+                                              : " BR ");
+        Serial.println(newDistanceCentimeters);
+        distancesCentimeters[i] = newDistanceCentimeters;
+      }
+      #endif
       if (newDistanceCentimeters < minDistaneCm) {
         minDistaneCm = newDistanceCentimeters;
       }
@@ -98,7 +104,9 @@ void sensorTask(void *pvParameters) {
 }
 
 void bluetoothReceiveTask(void *pvParamters) {
+  #if DEBUG
   Serial.println("Starting bluetooth receive.");
+  #endif
   while (true) {
     if (BTSerial.available()) {
       char c = BTSerial.read();
@@ -110,8 +118,10 @@ void bluetoothReceiveTask(void *pvParamters) {
         case '3':
         case 'p':
           xTaskNotify(carControlTaskHandle, (uint32_t)c, eSetValueWithOverwrite);
+          #if DEBUG
           Serial.print("Received car control: ");
           Serial.println(c);
+          #endif
           break;
       }
     }
@@ -119,7 +129,9 @@ void bluetoothReceiveTask(void *pvParamters) {
 }
 
 void carControlTask(void *pvParameters) {
+  #if DEBUG
   Serial.println("Starting car control task.");
+  #endif
   uint32_t carCommand;
   while (true) {
     if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &carCommand, portMAX_DELAY) && carCommand) {

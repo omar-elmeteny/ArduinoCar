@@ -6,7 +6,7 @@ float getLightIntensity();
 
 #define LDR_SENSOR A13
 #define LED 45
-#define lightThreshold1 300
-#define lightThreshold2 700
+#define LIGHT_THRESHOLD_BRIGHT 300
+#define LIGHT_THRESHOLD_DIM 700
 
 #endif
