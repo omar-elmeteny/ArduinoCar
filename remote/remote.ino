@@ -7,6 +7,7 @@
 #include "sevenSegment.h"
 #include "joystick.h"
 #include "mp3Player.h"
+#include "lightSensor.h"
 
 SoftwareSerial BTSerial(50, 51);
 
@@ -34,6 +35,7 @@ void setup() {
   setupJoystick();
   setupScreen();
   setupMp3Player();
+  setupLightSensor();
   BTSerial.begin(38400);
 
   xTaskCreate(inputTask, "INPUT", 512, NULL, 1, NULL);
@@ -130,6 +132,16 @@ void inputTask(void *pvParameters) {
     if (button) {
       xTaskNotify(mp3PlayerTaskHandle, (uint32_t)button, eSetValueWithOverwrite);
       vTaskDelay(pdMS_TO_TICKS(500));
+    }
+    float lightIntensity = getLightIntensity();
+    if(lightIntensity < lightThreshold1) {
+      analogWrite(LED, 0);
+    }
+    else if(lightIntensity >= lightThreshold1 && lightIntensity < lightThreshold2){
+      analogWrite(LED, 128);
+    }
+    else {
+      analogWrite(LED, 255);
     }
   }
 }
