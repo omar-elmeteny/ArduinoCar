@@ -72,14 +72,14 @@ void sensorTask(void *pvParameters) {
     for (uint8_t i = 0; i < SENSOR_COUNT; i++) {
       float oldDistanceCentimeters = distancesCentimeters[i];
       double newDistanceCentimeters = readDistanceCentimeters(i);
-      if (abs(newDistanceCentimeters - oldDistanceCentimeters) > DISTANCE_EPSILON_CM) {
-        Serial.print("distance change sensor");
-        Serial.print(i == 0 ? " FL " : i == 1 ? " FR "
-                                     : i == 2 ? " BL "
-                                              : " BR ");
-        Serial.println(newDistanceCentimeters);
-        distancesCentimeters[i] = newDistanceCentimeters;
-      }
+      // if (abs(newDistanceCentimeters - oldDistanceCentimeters) > DISTANCE_EPSILON_CM) {
+      //   Serial.print("distance change sensor");
+      //   Serial.print(i == 0 ? " FL " : i == 1 ? " FR "
+      //                                : i == 2 ? " BL "
+      //                                         : " BR ");
+      //   Serial.println(newDistanceCentimeters);
+      //   distancesCentimeters[i] = newDistanceCentimeters;
+      // }
       if (newDistanceCentimeters < minDistaneCm) {
         minDistaneCm = newDistanceCentimeters;
       }
@@ -110,6 +110,8 @@ void bluetoothReceiveTask(void *pvParamters) {
         case '3':
         case 'p':
           xTaskNotify(carControlTaskHandle, (uint32_t)c, eSetValueWithOverwrite);
+          Serial.print("Received car control: ");
+          Serial.println(c);
           break;
       }
     }
