@@ -16,26 +16,27 @@ void bluetoothReceiveTask(void *pvParameters);
 void carControlTask(void *pvParameters);
 void sensorTask(void *pvParameters);
 void buzzerTask(void *pvParameters);
-void parkingTask(void *pvParameters);
+//void parkingTask(void *pvParameters);
 
 TaskHandle_t carControlTaskHandle;
 TaskHandle_t buzzerTaskHandle;
 TaskHandle_t parkingTaskHandle;
 void setup() {
-  #ifdef DEBUG
+#ifdef DEBUG
   Serial.begin(38400);
-  #endif
+#endif
 
   setupCar();
   setupBuzzer();
   setupDistanceSensors();
   BTSerial.begin(38400);
+  BTSerial.listen();
 
-  xTaskCreate(sensorTask, "US", 128, NULL, 2, NULL);
-  xTaskCreate(buzzerTask, "BUZ", 128, NULL, 3, &buzzerTaskHandle);
+  xTaskCreate(sensorTask, "SENSOR", 128, NULL, 2, NULL);
   xTaskCreate(parkingTask, "PARK", 128, NULL, 3, &parkingTaskHandle);
 
-  xTaskCreate(carControlTask, "CAR", 128, NULL, 1, &carControlTaskHandle);
+  xTaskCreate(buzzerTask, "BUZ", 128, NULL, 5, &buzzerTaskHandle);
+  xTaskCreate(carControlTask, "CAR", 128, NULL, 5, &carControlTaskHandle);
   xTaskCreate(bluetoothReceiveTask, "BT_RCV", 128, NULL, 1, NULL);
 }
 
@@ -76,16 +77,16 @@ void sensorTask(void *pvParameters) {
     for (uint8_t i = 0; i < SENSOR_COUNT; i++) {
       float oldDistanceCentimeters = distancesCentimeters[i];
       double newDistanceCentimeters = readDistanceCentimeters(i);
-      #if DEBUG
-      if (abs(newDistanceCentimeters - oldDistanceCentimeters) > DISTANCE_EPSILON_CM) {
-        Serial.print("distance change sensor");
-        Serial.print(i == 0 ? " FL " : i == 1 ? " FR "
-                                     : i == 2 ? " BL "
-                                              : " BR ");
-        Serial.println(newDistanceCentimeters);
-        distancesCentimeters[i] = newDistanceCentimeters;
-      }
-      #endif
+      // #if DEBUG
+      // if (abs(newDistanceCentimeters - oldDistanceCentimeters) > DISTANCE_EPSILON_CM) {
+      //   Serial.print("distance change sensor");
+      //   Serial.print(i == 0 ? " FL " : i == 1 ? " FR "
+      //                                : i == 2 ? " BL "
+      //                                         : " BR ");
+      //   Serial.println(newDistanceCentimeters);
+      //   distancesCentimeters[i] = newDistanceCentimeters;
+      // }
+      // #endif
       if (newDistanceCentimeters < minDistaneCm) {
         minDistaneCm = newDistanceCentimeters;
       }
@@ -104,9 +105,9 @@ void sensorTask(void *pvParameters) {
 }
 
 void bluetoothReceiveTask(void *pvParamters) {
-  #if DEBUG
+#if DEBUG
   Serial.println("Starting bluetooth receive.");
-  #endif
+#endif
   while (true) {
     if (BTSerial.available()) {
       char c = BTSerial.read();
@@ -117,6 +118,9 @@ void bluetoothReceiveTask(void *pvParamters) {
         case '2':
         case '3':
         case 'p':
+        case 'a':
+        case 's':
+        case 'd':
           xTaskNotify(carControlTaskHandle, (uint32_t)c, eSetValueWithOverwrite);
           #if DEBUG
           Serial.print("Received car control: ");
@@ -129,9 +133,9 @@ void bluetoothReceiveTask(void *pvParamters) {
 }
 
 void carControlTask(void *pvParameters) {
-  #if DEBUG
+#if DEBUG
   Serial.println("Starting car control task.");
-  #endif
+#endif
   uint32_t carCommand;
   int8_t motorValue = 0;
   int8_t direction = 0;
@@ -162,6 +166,12 @@ void carControlTask(void *pvParameters) {
           direction = 1;
           break;
       }
+      #ifdef DEBUG
+      Serial.print("Direction = ");
+      Serial.print(direction);
+      Serial.print(", MotorValue = ");
+      Serial.println(motorValue);
+      #endif
       if (direction == 0) {
         setCarMovement(motorValue, motorValue);
       } else if (direction == -1) {
