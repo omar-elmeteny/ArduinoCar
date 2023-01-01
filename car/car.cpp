@@ -56,34 +56,34 @@ void setMotor(uint8_t enablePin, uint8_t fwdPin, uint8_t rvsPin, int8_t value) {
   } else {
     digitalWrite(fwdPin, HIGH);
     digitalWrite(rvsPin, LOW);
-    analogWrite(enablePin, SPEED_1);
+    analogWrite(enablePin, SPEED_3);
   }
 }
 
 void setCarMovement(int8_t leftWheels, int8_t rightWheels) {
-#ifdef DEBUG
-  Serial.print("setting motor values ");
-  Serial.print(leftWheels);
-  Serial.print(", ");
-  Serial.print(rightWheels);
-  Serial.print(", ");
-  Serial.print(leftMotorValue);
-  Serial.print(", ");
-  Serial.println(rightMotorValue);
-#endif
+// #ifdef DEBUG
+//   Serial.print("setting motor values ");
+//   Serial.print(leftWheels);
+//   Serial.print(", ");
+//   Serial.print(rightWheels);
+//   Serial.print(", ");
+//   Serial.print(leftMotorValue);
+//   Serial.print(", ");
+//   Serial.println(rightMotorValue);
+// #endif
   if (leftWheels != leftMotorValue) {
-#ifdef DEBUG
-    Serial.print("Setting left wheels to speed ");
-    Serial.println(leftWheels);
-#endif
+// #ifdef DEBUG
+//     Serial.print("Setting left wheels to speed ");
+//     Serial.println(leftWheels);
+// #endif
     setMotor(MOTOR_A_ENABLE, MOTOR_A_FWD, MOTOR_A_RVS, leftWheels);
     leftMotorValue = leftWheels;
   }
   if (rightWheels != rightMotorValue) {
-#ifdef DEBUG
-    Serial.print("Setting right wheels to speed ");
-    Serial.println(rightWheels);
-#endif
+// #ifdef DEBUG
+//     Serial.print("Setting right wheels to speed ");
+//     Serial.println(rightWheels);
+// #endif
     setMotor(MOTOR_B_ENABLE, MOTOR_B_FWD, MOTOR_B_RVS, rightWheels);
     rightMotorValue = rightWheels;
   }

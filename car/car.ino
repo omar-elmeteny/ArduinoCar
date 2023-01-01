@@ -16,11 +16,10 @@ void bluetoothReceiveTask(void *pvParameters);
 void carControlTask(void *pvParameters);
 void sensorTask(void *pvParameters);
 void buzzerTask(void *pvParameters);
-//void parkingTask(void *pvParameters);
+void parkingTask(void *pvParameters);
 
 TaskHandle_t carControlTaskHandle;
 TaskHandle_t buzzerTaskHandle;
-TaskHandle_t parkingTaskHandle;
 void setup() {
 #ifdef DEBUG
   Serial.begin(38400);
@@ -32,12 +31,73 @@ void setup() {
   BTSerial.begin(38400);
   BTSerial.listen();
 
-  xTaskCreate(sensorTask, "SENSOR", 128, NULL, 2, NULL);
-  xTaskCreate(parkingTask, "PARK", 128, NULL, 3, &parkingTaskHandle);
-
   xTaskCreate(buzzerTask, "BUZ", 128, NULL, 5, &buzzerTaskHandle);
+  xTaskCreate(sensorTask, "SENSOR", 128, NULL, 2, NULL);
   xTaskCreate(carControlTask, "CAR", 128, NULL, 5, &carControlTaskHandle);
+
   xTaskCreate(bluetoothReceiveTask, "BT_RCV", 128, NULL, 1, NULL);
+}
+
+void waitUntilObstacleOrTime(uint32_t ms, bool front, float distance) {
+  TickType_t entryTime = xTaskGetTickCount();
+  TickType_t exitTime = entryTime + pdMS_TO_TICKS(ms);
+  uint8_t leftSensor = front ? FRONT_LEFT : BACK_LEFT;
+  uint8_t rightSensor = front ? FRONT_RIGHT : BACK_RIGHT;
+  
+
+  while (readDistanceCentimeters(leftSensor) > distance && readDistanceCentimeters(rightSensor) > distance
+    && xTaskGetTickCount() < exitTime
+  ) {
+  }
+}
+
+void parkCar(bool rightSide) {
+#ifdef DEBUG
+  Serial.println(rightSide ? "Parking right side" : "Parking left side");
+#endif
+
+#ifdef DEBUG
+  Serial.println("Reversing car");
+#endif
+
+  xTaskNotify(carControlTaskHandle, 's', eSetValueWithoutOverwrite);
+  xTaskNotify(carControlTaskHandle, 'r', eSetValueWithoutOverwrite);
+  waitUntilObstacleOrTime(1500, false, 5);
+
+#ifdef DEBUG
+  Serial.println("Rotating car");
+#endif
+  xTaskNotify(carControlTaskHandle, rightSide ? 'a' : 'd', eSetValueWithoutOverwrite);
+  xTaskNotify(carControlTaskHandle, 'r', eSetValueWithoutOverwrite);
+  waitUntilObstacleOrTime(1500, false, 5);
+
+#ifdef DEBUG
+  Serial.println("Reversing car");
+#endif
+
+  xTaskNotify(carControlTaskHandle, 's', eSetValueWithoutOverwrite);
+  xTaskNotify(carControlTaskHandle, 'r', eSetValueWithoutOverwrite);
+
+  waitUntilObstacleOrTime(5000, false, 5);
+
+
+#ifdef DEBUG
+  Serial.println("Rotating car");
+#endif
+  xTaskNotify(carControlTaskHandle, rightSide ? 'a' : 'd', eSetValueWithoutOverwrite);
+  xTaskNotify(carControlTaskHandle, '3', eSetValueWithoutOverwrite);
+  
+  waitUntilObstacleOrTime(1500, true, 5);
+
+#ifdef DEBUG
+  Serial.println("Stopping car");
+#endif
+  xTaskNotify(carControlTaskHandle, 'n', eSetValueWithoutOverwrite);
+  xTaskNotify(carControlTaskHandle, 's', eSetValueWithoutOverwrite);
+
+#ifdef DEBUG
+  Serial.println("Car parked");
+#endif
 }
 
 void buzzerTask(void *pvParamters) {
@@ -108,28 +168,36 @@ void bluetoothReceiveTask(void *pvParamters) {
 #if DEBUG
   Serial.println("Starting bluetooth receive.");
 #endif
+
+
+  vTaskDelay(pdMS_TO_TICKS(5000));
+  parkCar(true);
+
   while (true) {
-    if (BTSerial.available()) {
-      char c = BTSerial.read();
-      switch (c) {
-        case 'r':
-        case 'n':
-        case '1':
-        case '2':
-        case '3':
-        case 'p':
-        case 'a':
-        case 's':
-        case 'd':
-          xTaskNotify(carControlTaskHandle, (uint32_t)c, eSetValueWithOverwrite);
-          #if DEBUG
-          Serial.print("Received car control: ");
-          Serial.println(c);
-          #endif
-          break;
-      }
-    }
+    vTaskDelay(pdMS_TO_TICKS(5000));
   }
+  //   while (true) {
+  //     if (BTSerial.available()) {
+  //       char c = BTSerial.read();
+  //       switch (c) {
+  //         case 'r':
+  //         case 'n':
+  //         case '1':
+  //         case '2':
+  //         case '3':
+  //         case 'p':
+  //         case 'a':
+  //         case 's':
+  //         case 'd':
+  //           xTaskNotify(carControlTaskHandle, (uint32_t)c, eSetValueWithOverwrite);
+  // #if DEBUG
+  //           Serial.print("Received car control: ");
+  //           Serial.println(c);
+  // #endif
+  //           break;
+  //       }
+  //     }
+  //   }
 }
 
 void carControlTask(void *pvParameters) {
@@ -166,17 +234,17 @@ void carControlTask(void *pvParameters) {
           direction = 1;
           break;
       }
-      #ifdef DEBUG
-      Serial.print("Direction = ");
-      Serial.print(direction);
-      Serial.print(", MotorValue = ");
-      Serial.println(motorValue);
-      #endif
+      // #ifdef DEBUG
+      //       Serial.print("Direction = ");
+      //       Serial.print(direction);
+      //       Serial.print(", MotorValue = ");
+      //       Serial.println(motorValue);
+      // #endif
       if (direction == 0) {
         setCarMovement(motorValue, motorValue);
-      } else if (direction == -1) {
-        setCarMovement(0, motorValue);
       } else if (direction == 1) {
+        setCarMovement(0, motorValue);
+      } else {
         setCarMovement(motorValue, 0);
       }
     }
