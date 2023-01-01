@@ -4,6 +4,7 @@
 #include <SoftwareSerial.h>
 #include <limits.h>
 
+#include "common.h"
 #include "sevenSegment.h"
 #include "joystick.h"
 #include "mp3Player.h"
@@ -28,8 +29,7 @@ TaskHandle_t screenUpdateTaskHandle;
 
 SemaphoreHandle_t screenPinsMutex;
 
-void setup()
-{
+void setup() {
 #ifdef DEBUG
   Serial.begin(38400);
 #endif
@@ -41,12 +41,12 @@ void setup()
   setupLightSensor();
   BTSerial.begin(38400);
 
-  xTaskCreate(inputTask, "INPUT", 512, NULL, 1, NULL);
+  xTaskCreate(inputTask, "INPUT", 128, NULL, 1, NULL);
 #ifdef DEBUG
-  xTaskCreate(mp3PlayerStatusUpdatesTask, "MP3_STATUS_TASK", 512, NULL, 1, NULL);
+  xTaskCreate(mp3PlayerStatusUpdatesTask, "MP3_STATUS_TASK", 128, NULL, 1, NULL);
 #endif
 
-  xTaskCreate(gearSevenSegmentTask, "GEAR_7SEGMENT_TASK", 512, NULL, 3, &gearSevenSegmentTaskHandle);
+  xTaskCreate(gearSevenSegmentTask, "GEAR_7SEGMENT_TASK", 128, NULL, 3, &gearSevenSegmentTaskHandle);
   xTaskCreate(mp3PlayerTask, "MP3_TASK", 512, NULL, 3, &mp3PlayerTaskHandle);
 
   xTaskCreate(screenUpdateTask, "SCREEN_UPDATE_TASK", 512, NULL, 2, &screenUpdateTaskHandle);
@@ -54,20 +54,15 @@ void setup()
   screenPinsMutex = xSemaphoreCreateMutex();
 }
 
-void loop()
-{
+void loop() {
 }
 
-void screenUpdateTask(void *pvParameters)
-{
-  while (true)
-  {
+void screenUpdateTask(void *pvParameters) {
+  while (true) {
     uint32_t update;
 
-    if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &update, portMAX_DELAY) == pdTRUE && update)
-    {
-      if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) == pdTRUE)
-      {
+    if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &update, portMAX_DELAY) == pdTRUE && update) {
+      if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) == pdTRUE) {
         updateScreen();
         xSemaphoreGive(screenPinsMutex);
       }
@@ -75,106 +70,92 @@ void screenUpdateTask(void *pvParameters)
   }
 }
 #ifdef DEBUG
-void mp3PlayerStatusUpdatesTask(void *pvParameters)
-{
-  while (true)
-  {
+void mp3PlayerStatusUpdatesTask(void *pvParameters) {
+  while (true) {
     printMp3PlayerUpdates();
     vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
 #endif
 
-void mp3PlayerTask(void *pvParameters)
-{
+void mp3PlayerTask(void *pvParameters) {
   uint32_t command;
-  while (true)
-  {
-    if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &command, portMAX_DELAY) && command)
-    {
-      switch (command)
-      {
-      case PREVIOUS_BUTTON:
-        previousSong();
-        break;
-      case NEXT_BUTTON:
-        nextSong();
-        break;
-      case PAUSE_PLAY_BUTTON:
-        playPause();
-        break;
+  while (true) {
+    if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &command, portMAX_DELAY) && command) {
+      switch (command) {
+        case PREVIOUS_BUTTON:
+          previousSong();
+          break;
+        case NEXT_BUTTON:
+          nextSong();
+          break;
+        case PAUSE_PLAY_BUTTON:
+          playPause();
+          break;
       }
       xTaskNotify(screenUpdateTaskHandle, 1, eSetValueWithOverwrite);
     }
   }
 }
 
-void gearSevenSegmentTask(void *pvParameters)
-{
+void gearSevenSegmentTask(void *pvParameters) {
   uint32_t gearValue;
-  while (true)
-  {
-    if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &gearValue, portMAX_DELAY) && gearValue)
-    {
+  while (true) {
+    if (xTaskNotifyWait(ULONG_MAX, ULONG_MAX, &gearValue, portMAX_DELAY) && gearValue) {
       sevenSegPrint((char)gearValue);
     }
   }
 }
 
-void handleJoyStickInput()
-{
+void handleJoyStickInput() {
   char newGearStatus = getCurrentGearStatus(gearStatus);
-  if (newGearStatus != gearStatus)
-  {
+  if (newGearStatus != gearStatus) {
     gearStatus = newGearStatus;
     xTaskNotify(gearSevenSegmentTaskHandle, (uint32_t)gearStatus, eSetValueWithOverwrite);
     BTSerial.write(gearStatus);
+#ifdef DEBUG
+    Serial.print("Sending cmd: ");
+    Serial.println(gearStatus);
+#endif
   }
 
   char newDirection = getDirection();
   if (newDirection != direction) {
     direction = newDirection;
-    BTSerial.write(gearStatus);
+    BTSerial.write(direction);
+#ifdef DEBUG
+    Serial.print("Sending cmd: ");
+    Serial.println(direction);
+#endif
   }
 }
 
-void handleTouchScreenInput()
-{
-  if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) != pdTRUE)
-  {
+void handleTouchScreenInput() {
+  if (xSemaphoreTake(screenPinsMutex, portMAX_DELAY) != pdTRUE) {
     return;
   }
   uint8_t button = getTappedButton();
   xSemaphoreGive(screenPinsMutex);
 
-  if (button)
-  {
+  if (button) {
     xTaskNotify(mp3PlayerTaskHandle, (uint32_t)button, eSetValueWithOverwrite);
     vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
 
-void handleLightSensorInput()
-{
+void handleLightSensorInput() {
   float lightIntensity = getLightIntensity();
-  if (lightIntensity < LIGHT_THRESHOLD_BRIGHT)
-  {
+  if (lightIntensity < LIGHT_THRESHOLD_BRIGHT) {
     analogWrite(LED, 0);
-  }
-  else if (lightIntensity < LIGHT_THRESHOLD_DIM)
-  {
+  } else if (lightIntensity < LIGHT_THRESHOLD_DIM) {
     analogWrite(LED, 128);
-  }
-  else
-  {
+  } else {
     analogWrite(LED, 255);
   }
 }
 
-void inputTask(void *pvParameters)
-{
-  while (true)
-  {
+void inputTask(void *pvParameters) {
+  while (true) {
     handleJoyStickInput();
     handleTouchScreenInput();
     handleLightSensorInput();

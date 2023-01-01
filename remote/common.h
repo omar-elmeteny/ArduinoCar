@@ -1,4 +1,4 @@
-#ifdef Common_h
+#ifndef Common_h
 #define Common_h
 
 #define DEBUG 1
