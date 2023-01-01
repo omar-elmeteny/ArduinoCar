@@ -65,8 +65,7 @@ char getCurrentGearStatus(char oldGearStatus) {
         newGearStatus = 'p';
       }
     } else {
-      newGearStatus = oldGearStatus == 'p' || oldGearStatus == 'n' ? oldGearStatus : oldGearStatus == ' ' ? 'p'
-                                                                                              : 'n';
+      newGearStatus = oldGearStatus == 'p' || oldGearStatus == 'n' ? oldGearStatus : 'n';
     }
   } else if (sensorValueY <= 0.7) {
     newGearStatus = '1';
